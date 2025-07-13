@@ -34,8 +34,8 @@
       left: 0,
       width: "100%",
       display: "flex",
-      gap: "8px",
-      padding: "4px 8px",
+      gap: "2px",
+      padding: "1px 1px",
       background: "rgba(0,0,0,0.85)",
       color: "#fff",
       fontFamily: "sans-serif",
@@ -50,8 +50,8 @@
         background: "#444",
         color: "#fff",
         border: "none",
-        padding: "4px 10px",
-        borderRadius: "4px",
+        padding: "1px 1px",
+        borderRadius: "1px",
         cursor: "pointer"
       });
       b.addEventListener("click", onClick);
@@ -64,7 +64,7 @@
     input.type = "number";
     input.step = "0.1";
     input.placeholder = "rate";
-    input.style.width = "60px";
+    input.style.width = "40px";
     bar.appendChild(input);
 
     bar.appendChild(makeBtn("E", () => {
