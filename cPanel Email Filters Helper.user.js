@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         cPanel Email Filters Helper
 // @namespace    https://example.com/cpanel-email-filters
-// @version      0.2.0
+// @version      0.2.1
 // @description  Adds helper actions on cPanel's email filters page: extract rules to a text file and add multiple rules from a list.
 // @author       Your Name
 // @match        *://*/frontend/*/mail/filters/*
@@ -192,6 +192,24 @@
     return false;
   };
 
+  const waitForRuleRows = (expectedCount, timeoutMs = 2000) =>
+    new Promise(resolve => {
+      const start = Date.now();
+      const check = () => {
+        const rows = collectRuleRows();
+        if (rows.length >= expectedCount) {
+          resolve(rows);
+          return;
+        }
+        if (Date.now() - start >= timeoutMs) {
+          resolve(rows);
+          return;
+        }
+        requestAnimationFrame(check);
+      };
+      check();
+    });
+
   const buildOptionList = (options, selected) =>
     options
       .map(option => {
@@ -303,7 +321,7 @@
 
     overlay.querySelector("#tm-rule-cancel").addEventListener("click", cleanup);
 
-    overlay.querySelector("#tm-rule-submit").addEventListener("click", () => {
+    overlay.querySelector("#tm-rule-submit").addEventListener("click", async () => {
       const headerValue = overlay.querySelector("#tm-rule-header").value;
       const operatorValue = overlay.querySelector("#tm-rule-operator").value;
       const interactionValue = overlay.querySelector("#tm-rule-interaction").value;
@@ -319,15 +337,18 @@
       const effectiveInteraction =
         values.length > 1 ? "or" : interactionValue || "or";
 
-      values.forEach((value, index) => {
+      let rows = collectRuleRows();
+      let targetCount = rows.length;
+
+      for (const [index, value] of values.entries()) {
         if (index > 0) {
           if (!addRuleRow()) {
             alert("Could not find an 'Add Rule' button to create additional rows.");
             return;
           }
+          targetCount += 1;
+          rows = await waitForRuleRows(targetCount);
         }
-
-        const rows = collectRuleRows();
         const target = rows[rows.length - 1];
         if (!target) return;
 
@@ -340,7 +361,7 @@
         target.input.value = value;
         target.input.dispatchEvent(new Event("input", { bubbles: true }));
         target.input.dispatchEvent(new Event("change", { bubbles: true }));
-      });
+      }
 
       const activeActionSelect = findActionSelect();
       if (activeActionSelect && actionValue) {
