@@ -15,3 +15,6 @@ This repository contains a small set of personal Tampermonkey userscripts. Each 
 ## Ongoing maintenance requirements (must do)
 - After completing each work request, review **this** `AGENTS.md` and update it if you learned new, useful project context.
 - Every time you run, review and update `README.md` to keep it current with the repository contents.
+
+## Recent context
+- Added a cPanel email filters helper userscript that injects a small toolbar to export rules and add multiple filter rows on the filters page.
