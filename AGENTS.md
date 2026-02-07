@@ -19,3 +19,4 @@ This repository contains a small set of personal Tampermonkey userscripts. Each 
 ## Recent context
 - Updated the cPanel email filters helper to open a dropdown-driven form for adding rules, including AND/OR interactions, actions, and OR-linked value lists.
 - Fixed multi-value rule creation to wait for new rows so each value is applied.
+- Ensured new rule rows are added by clicking the plus button inside the last row.

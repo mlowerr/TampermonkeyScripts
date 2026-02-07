@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         cPanel Email Filters Helper
 // @namespace    https://example.com/cpanel-email-filters
-// @version      0.2.1
+// @version      0.2.2
 // @description  Adds helper actions on cPanel's email filters page: extract rules to a text file and add multiple rules from a list.
 // @author       Your Name
 // @match        *://*/frontend/*/mail/filters/*
@@ -155,6 +155,26 @@
     });
   };
 
+  const findRowAddRuleButton = row => {
+    if (!row) return null;
+    const buttons = Array.from(
+      row.querySelectorAll("button, input[type=\"button\"], input[type=\"submit\"], a")
+    );
+    return (
+      buttons.find(button => {
+        const text = (button.textContent || button.value || "").trim();
+        const label = button.getAttribute("aria-label") || "";
+        const title = button.getAttribute("title") || "";
+        return (
+          text === "+" ||
+          /add/i.test(label) ||
+          /add/i.test(title) ||
+          /add/i.test(text)
+        );
+      }) || null
+    );
+  };
+
   const extractRules = () => {
     const rows = collectRuleRows();
 
@@ -184,7 +204,9 @@
       .filter(Boolean);
 
   const addRuleRow = () => {
-    const button = findAddRuleButton();
+    const rows = collectRuleRows();
+    const lastRow = rows[rows.length - 1]?.row;
+    const button = findRowAddRuleButton(lastRow) || findAddRuleButton();
     if (button) {
       button.click();
       return true;
