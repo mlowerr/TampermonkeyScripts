@@ -4,8 +4,8 @@
 // @version      0.1.0
 // @description  Adds helper actions on cPanel's email filters page: extract rules to a text file and add multiple rules from a list.
 // @author       Your Name
-// @match        *://*/frontend/*/mail/filters.html*
-// @include      *://*/cpsess*/frontend/*/mail/filters.html*
+// @match        *://*/frontend/*/mail/filters/*
+// @include      *://*/cpsess*/frontend/*/mail/*
 // @grant        none
 // ==/UserScript==
 
