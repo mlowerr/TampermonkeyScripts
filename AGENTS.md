@@ -17,4 +17,4 @@ This repository contains a small set of personal Tampermonkey userscripts. Each 
 - Every time you run, review and update `README.md` to keep it current with the repository contents.
 
 ## Recent context
-- Added a cPanel email filters helper userscript that injects a small toolbar to export rules and add multiple filter rows on the filters page.
+- Updated the cPanel email filters helper to open a dropdown-driven form for adding rules, including AND/OR interactions, actions, and OR-linked value lists.

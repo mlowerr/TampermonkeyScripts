@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         cPanel Email Filters Helper
 // @namespace    https://example.com/cpanel-email-filters
-// @version      0.1.0
+// @version      0.2.0
 // @description  Adds helper actions on cPanel's email filters page: extract rules to a text file and add multiple rules from a list.
 // @author       Your Name
 // @match        *://*/frontend/*/mail/filters/*
@@ -49,6 +49,75 @@
     return false;
   };
 
+  const HEADER_OPTIONS = [
+    "From",
+    "Subject",
+    "To",
+    "Reply Address",
+    "Body",
+    "Any Header",
+    "Any Recipient",
+    "Has Not Been Previously Delivered",
+    "Is an Error Message",
+    "List ID",
+    "Spam Status",
+    "Spam Bar",
+    "Spam Score"
+  ];
+
+  const OPERATOR_OPTIONS = [
+    "equals",
+    "matches regex",
+    "contains",
+    "does not contain",
+    "begins with",
+    "ends with",
+    "does not begin",
+    "does not end with",
+    "does not match",
+    "is above (#s only)",
+    "is not above (#s only)",
+    "is below (#s only)",
+    "is not below (#s only)"
+  ];
+
+  const INTERACTION_OPTIONS = ["or", "and"];
+
+  const ACTION_OPTIONS = [
+    "Discard Message",
+    "Redirect to Email",
+    "Fail With Message",
+    "Stop Processing Rules",
+    "Deliver to Folder",
+    "Pipe to a Program"
+  ];
+
+  const optionMatches = (select, candidates) =>
+    candidates.some(candidate =>
+      Array.from(select.options).some(
+        option => normalize(option.textContent) === normalize(candidate)
+      )
+    );
+
+  const classifyRuleSelects = selects => {
+    const interaction = selects.find(select =>
+      optionMatches(select, INTERACTION_OPTIONS)
+    );
+    const operator = selects.find(select => optionMatches(select, OPERATOR_OPTIONS));
+    const header = selects.find(select => optionMatches(select, HEADER_OPTIONS));
+
+    if (header && operator) {
+      return { header, operator, interaction };
+    }
+
+    const fallback = selects.filter(select => select !== interaction);
+    return {
+      header: header || fallback[0],
+      operator: operator || fallback[1],
+      interaction
+    };
+  };
+
   const collectRuleRows = () => {
     const candidates = Array.from(
       document.querySelectorAll("tr, .ruleRow, .filterRow, .rule, .fieldset")
@@ -56,16 +125,23 @@
 
     return candidates
       .map(row => {
-        const selects = row.querySelectorAll("select");
+        const selects = Array.from(row.querySelectorAll("select"));
         const input = row.querySelector(
           "input[type=\"text\"], input:not([type])"
         );
         if (selects.length >= 2 && input) {
-          return { row, selects, input };
+          const { header, operator, interaction } = classifyRuleSelects(selects);
+          if (!header || !operator) return null;
+          return { row, selects, header, operator, interaction, input };
         }
         return null;
       })
       .filter(Boolean);
+  };
+
+  const findActionSelect = () => {
+    const selects = Array.from(document.querySelectorAll("select"));
+    return selects.find(select => optionMatches(select, ACTION_OPTIONS));
   };
 
   const findAddRuleButton = () => {
@@ -89,11 +165,11 @@
 
     const lines = ["Header\tOperator\tValue"];
 
-    rows.forEach(({ selects, input }, index) => {
-      const header = getSelectedText(selects[0]) || "(unknown header)";
-      const operator = getSelectedText(selects[1]) || "(unknown operator)";
+    rows.forEach(({ header, operator, input }, index) => {
+      const headerText = getSelectedText(header) || "(unknown header)";
+      const operatorText = getSelectedText(operator) || "(unknown operator)";
       const value = input.value?.trim() || "";
-      lines.push(`${index + 1}. ${header}\t${operator}\t${value}`);
+      lines.push(`${index + 1}. ${headerText}\t${operatorText}\t${value}`);
     });
 
     const now = new Date();
@@ -116,58 +192,167 @@
     return false;
   };
 
+  const buildOptionList = (options, selected) =>
+    options
+      .map(option => {
+        const isSelected = normalize(option) === normalize(selected);
+        return `<option value="${option}"${isSelected ? " selected" : ""}>${option}</option>`;
+      })
+      .join("");
+
+  const getSelectOptionTexts = select =>
+    Array.from(select?.options ?? []).map(option => option.textContent.trim());
+
+  const buildDialog = defaults => {
+    const overlay = document.createElement("div");
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.background = "rgba(0, 0, 0, 0.5)";
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.zIndex = "999999999";
+
+    const panel = document.createElement("div");
+    panel.style.background = "#fff";
+    panel.style.color = "#111";
+    panel.style.padding = "16px";
+    panel.style.borderRadius = "8px";
+    panel.style.width = "min(520px, 90vw)";
+    panel.style.boxShadow = "0 6px 20px rgba(0, 0, 0, 0.2)";
+    panel.style.fontFamily = "sans-serif";
+
+    panel.innerHTML = `
+      <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Add Email Filter Rules</div>
+      <label style="display: block; font-size: 12px; margin-top: 8px;">Header/Field</label>
+      <select id="tm-rule-header" style="width: 100%; margin-top: 4px;">${buildOptionList(
+        defaults.headerOptions,
+        defaults.headerDefault
+      )}</select>
+      <label style="display: block; font-size: 12px; margin-top: 8px;">Operator</label>
+      <select id="tm-rule-operator" style="width: 100%; margin-top: 4px;">${buildOptionList(
+        defaults.operatorOptions,
+        defaults.operatorDefault
+      )}</select>
+      <label style="display: block; font-size: 12px; margin-top: 8px;">Rule Interaction (AND/OR)</label>
+      <select id="tm-rule-interaction" style="width: 100%; margin-top: 4px;">${buildOptionList(
+        INTERACTION_OPTIONS,
+        defaults.interactionDefault
+      )}</select>
+      <label style="display: block; font-size: 12px; margin-top: 8px;">Action</label>
+      <select id="tm-rule-action" style="width: 100%; margin-top: 4px;">${buildOptionList(
+        defaults.actionOptions,
+        defaults.actionDefault
+      )}</select>
+      <label style="display: block; font-size: 12px; margin-top: 8px;">Values (comma or line separated)</label>
+      <textarea id="tm-rule-values" rows="4" style="width: 100%; margin-top: 4px;" placeholder="value@example.com, other@example.com"></textarea>
+      <div style="font-size: 11px; margin-top: 6px; color: #555;">
+        Multiple values will be added as a single OR rule group.
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+        <button id="tm-rule-cancel" style="padding: 6px 10px;">Cancel</button>
+        <button id="tm-rule-submit" style="padding: 6px 10px; background: #2d6cdf; color: #fff; border: none; border-radius: 4px;">Add Rules</button>
+      </div>
+    `;
+
+    overlay.appendChild(panel);
+
+    return { overlay, panel };
+  };
+
   const addNewRule = () => {
-    const header = window.prompt(
-      "Header/Field to match (example: \"From\", \"Subject\", \"Any Header\"). Leave blank to keep current.",
-      ""
-    );
-    if (header === null) return;
-
-    const operator = window.prompt(
-      "Operator to use (example: \"contains\", \"is\", \"does not contain\"). Leave blank to keep current.",
-      "contains"
-    );
-    if (operator === null) return;
-
-    const rawValues = window.prompt(
-      "Enter value(s) for the rule (comma-separated or one per line).",
-      ""
-    );
-    if (rawValues === null) return;
-
-    const values = parseValues(rawValues);
-    if (!values.length) {
-      alert("No values provided. Nothing to add.");
-      return;
-    }
-
     const rowsBefore = collectRuleRows();
     if (!rowsBefore.length) {
       alert("Could not find existing rule rows to clone or update.");
       return;
     }
 
-    values.forEach((value, index) => {
-      if (index > 0) {
-        if (!addRuleRow()) {
-          alert("Could not find an 'Add Rule' button to create additional rows.");
-          return;
-        }
-      }
+    const headerOptions = getSelectOptionTexts(rowsBefore[0].header);
+    const operatorOptions = getSelectOptionTexts(rowsBefore[0].operator);
+    const headerDefault = getSelectedText(rowsBefore[0].header) || headerOptions[0];
+    const operatorDefault =
+      getSelectedText(rowsBefore[0].operator) || operatorOptions[0];
+    const interactionDefault =
+      getSelectedText(rowsBefore[0].interaction) || INTERACTION_OPTIONS[0];
+    const actionSelect = findActionSelect();
+    const actionOptions = actionSelect
+      ? getSelectOptionTexts(actionSelect)
+      : ACTION_OPTIONS;
+    const actionDefault = actionSelect
+      ? getSelectedText(actionSelect)
+      : ACTION_OPTIONS[0];
 
-      const rows = collectRuleRows();
-      const target = rows[rows.length - 1];
-      if (!target) return;
-
-      if (header) selectByText(target.selects[0], header);
-      if (operator) selectByText(target.selects[1], operator);
-
-      target.input.value = value;
-      target.input.dispatchEvent(new Event("input", { bubbles: true }));
-      target.input.dispatchEvent(new Event("change", { bubbles: true }));
+    const { overlay } = buildDialog({
+      headerOptions,
+      operatorOptions,
+      headerDefault,
+      operatorDefault,
+      interactionDefault,
+      actionOptions,
+      actionDefault
     });
 
-    alert("Rules added. Review them and click Save in cPanel to apply changes.");
+    const cleanup = () => overlay.remove();
+
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) cleanup();
+    });
+
+    overlay.querySelector("#tm-rule-cancel").addEventListener("click", cleanup);
+
+    overlay.querySelector("#tm-rule-submit").addEventListener("click", () => {
+      const headerValue = overlay.querySelector("#tm-rule-header").value;
+      const operatorValue = overlay.querySelector("#tm-rule-operator").value;
+      const interactionValue = overlay.querySelector("#tm-rule-interaction").value;
+      const actionValue = overlay.querySelector("#tm-rule-action").value;
+      const rawValues = overlay.querySelector("#tm-rule-values").value;
+
+      const values = parseValues(rawValues);
+      if (!values.length) {
+        alert("No values provided. Nothing to add.");
+        return;
+      }
+
+      const effectiveInteraction =
+        values.length > 1 ? "or" : interactionValue || "or";
+
+      values.forEach((value, index) => {
+        if (index > 0) {
+          if (!addRuleRow()) {
+            alert("Could not find an 'Add Rule' button to create additional rows.");
+            return;
+          }
+        }
+
+        const rows = collectRuleRows();
+        const target = rows[rows.length - 1];
+        if (!target) return;
+
+        if (headerValue) selectByText(target.header, headerValue);
+        if (operatorValue) selectByText(target.operator, operatorValue);
+        if (target.interaction) {
+          selectByText(target.interaction, effectiveInteraction);
+        }
+
+        target.input.value = value;
+        target.input.dispatchEvent(new Event("input", { bubbles: true }));
+        target.input.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+
+      const activeActionSelect = findActionSelect();
+      if (activeActionSelect && actionValue) {
+        selectByText(activeActionSelect, actionValue);
+      }
+
+      cleanup();
+      alert("Rules added. Review them and click Save in cPanel to apply changes.");
+    });
+
+    document.body.appendChild(overlay);
+    overlay.querySelector("#tm-rule-values").focus();
   };
 
   const buildBar = () => {
