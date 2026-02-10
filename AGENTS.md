@@ -23,3 +23,4 @@ This repository contains a small set of personal Tampermonkey userscripts. Each 
 - Set the Add New Rule modal to default the Header/Field dropdown to From when available.
 - Added email-header value normalization so `<` becomes `,` and `>` is removed before parsing values.
 - Updated rule insertion flow to always add a new row before writing values to avoid overwriting the previous last row on repeated adds.
+- Expanded email-value normalization header detection to include recipient fields (`To`, `Any Recipient`) so bracketed addresses are cleaned consistently.

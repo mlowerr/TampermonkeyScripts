@@ -207,7 +207,9 @@
     const normalizedHeader = normalize(headerValue || "");
     return (
       normalizedHeader === "from" ||
+      normalizedHeader === "to" ||
       normalizedHeader === "reply address" ||
+      normalizedHeader === "any recipient" ||
       normalizedHeader.includes("email") ||
       normalizedHeader.includes("e-mail")
     );
