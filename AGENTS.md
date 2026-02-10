@@ -5,7 +5,7 @@ This repository contains a small set of personal Tampermonkey userscripts. Each 
 
 ## Repository layout
 - `README.md`: High-level summary of the project and a brief overview of each userscript. Keep this in sync with the scripts present in the repo.
-- `*.user.js`: Individual Tampermonkey userscripts. Update script metadata (name, version, @match/@include) when behavior changes.
+- `*.user.js`: Individual Tampermonkey userscripts. Update script metadata (`@name`, `@version`, `@match`/`@include`) when behavior changes.
 
 ## Working conventions
 - Keep each script self-contained and focused on its target site.
@@ -16,11 +16,7 @@ This repository contains a small set of personal Tampermonkey userscripts. Each 
 - After completing each work request, review **this** `AGENTS.md` and update it if you learned new, useful project context.
 - Every time you run, review and update `README.md` to keep it current with the repository contents.
 
-## Recent context
-- Updated the cPanel email filters helper to open a dropdown-driven form for adding rules, including AND/OR interactions, actions, and OR-linked value lists.
-- Fixed multi-value rule creation to wait for new rows so each value is applied.
-- Ensured new rule rows are added by clicking the plus button inside the last row.
-- Set the Add New Rule modal to default the Header/Field dropdown to From when available.
-- Added email-header value normalization so `<` becomes `,` and `>` is removed before parsing values.
-- Updated rule insertion flow to always add a new row before writing values to avoid overwriting the previous last row on repeated adds.
-- Expanded email-value normalization header detection to include recipient fields (`To`, `Any Recipient`) so bracketed addresses are cleaned consistently.
+## Current script context
+- `cPanel Email Filters Helper.user.js` includes a form-driven rule builder (header/operator/interaction/action), defaults new rules to `From` when available, normalizes bracketed email addresses for sender/recipient headers (`From`, `To`, `Any Recipient`), and always inserts fresh rule rows before filling multi-value entries.
+- Reddit scripts include: visited-link highlighting (`Reddit – highlight visited links`) and gallery image downloading via a fixed top bar (`Reddit Gallery Downloader Bar`).
+- `Speedy Sites (YouTube only)` auto-applies playback speed (with live-video handling), shows a floating speed bar, and rehooks on dynamic page changes.
