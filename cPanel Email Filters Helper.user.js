@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         cPanel Email Filters Helper
 // @namespace    https://example.com/cpanel-email-filters
-// @version      0.2.2
+// @version      0.2.3
 // @description  Adds helper actions on cPanel's email filters page: extract rules to a text file and add multiple rules from a list.
 // @author       Your Name
 // @match        *://*/frontend/*/mail/filters/*
@@ -203,6 +203,19 @@
       .map(value => value.trim())
       .filter(Boolean);
 
+  const isEmailHeader = headerValue => {
+    const normalizedHeader = normalize(headerValue || "");
+    return (
+      normalizedHeader === "from" ||
+      normalizedHeader === "reply address" ||
+      normalizedHeader.includes("email") ||
+      normalizedHeader.includes("e-mail")
+    );
+  };
+
+  const normalizeEmailValues = raw =>
+    raw.replace(/</g, ",").replace(/>/g, "");
+
   const addRuleRow = () => {
     const rows = collectRuleRows();
     const lastRow = rows[rows.length - 1]?.row;
@@ -312,7 +325,10 @@
 
     const headerOptions = getSelectOptionTexts(rowsBefore[0].header);
     const operatorOptions = getSelectOptionTexts(rowsBefore[0].operator);
-    const headerDefault = getSelectedText(rowsBefore[0].header) || headerOptions[0];
+    const headerDefault =
+      headerOptions.find(option => normalize(option) === "from") ||
+      getSelectedText(rowsBefore[0].header) ||
+      headerOptions[0];
     const operatorDefault =
       getSelectedText(rowsBefore[0].operator) || operatorOptions[0];
     const interactionDefault =
@@ -349,8 +365,11 @@
       const interactionValue = overlay.querySelector("#tm-rule-interaction").value;
       const actionValue = overlay.querySelector("#tm-rule-action").value;
       const rawValues = overlay.querySelector("#tm-rule-values").value;
+      const processedValues = isEmailHeader(headerValue)
+        ? normalizeEmailValues(rawValues)
+        : rawValues;
 
-      const values = parseValues(rawValues);
+      const values = parseValues(processedValues);
       if (!values.length) {
         alert("No values provided. Nothing to add.");
         return;
@@ -362,15 +381,13 @@
       let rows = collectRuleRows();
       let targetCount = rows.length;
 
-      for (const [index, value] of values.entries()) {
-        if (index > 0) {
-          if (!addRuleRow()) {
-            alert("Could not find an 'Add Rule' button to create additional rows.");
-            return;
-          }
-          targetCount += 1;
-          rows = await waitForRuleRows(targetCount);
+      for (const value of values) {
+        if (!addRuleRow()) {
+          alert("Could not find an 'Add Rule' button to create additional rows.");
+          return;
         }
+        targetCount += 1;
+        rows = await waitForRuleRows(targetCount);
         const target = rows[rows.length - 1];
         if (!target) return;
 

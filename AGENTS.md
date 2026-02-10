@@ -20,3 +20,6 @@ This repository contains a small set of personal Tampermonkey userscripts. Each 
 - Updated the cPanel email filters helper to open a dropdown-driven form for adding rules, including AND/OR interactions, actions, and OR-linked value lists.
 - Fixed multi-value rule creation to wait for new rows so each value is applied.
 - Ensured new rule rows are added by clicking the plus button inside the last row.
+- Set the Add New Rule modal to default the Header/Field dropdown to From when available.
+- Added email-header value normalization so `<` becomes `,` and `>` is removed before parsing values.
+- Updated rule insertion flow to always add a new row before writing values to avoid overwriting the previous last row on repeated adds.
