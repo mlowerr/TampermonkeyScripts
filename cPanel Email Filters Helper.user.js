@@ -189,7 +189,7 @@
       const headerText = getSelectedText(header) || "(unknown header)";
       const operatorText = getSelectedText(operator) || "(unknown operator)";
       const value = input.value?.trim() || "";
-      lines.push(`${index + 1}. ${headerText}\t${operatorText}\t${value}`);
+      lines.push(`${headerText}\t${operatorText}\t${value}`);
     });
 
     const now = new Date();
