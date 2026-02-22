@@ -5,6 +5,7 @@
 // @description  Adds a small bar at the top of every Reddit page with a 📥 Gallery button that downloads all full‑resolution images in a gallery post.
 // @author       Your Name
 // @match        *://*.reddit.com/*
+// @exclude      *://*.reddit.com/chat/*
 // @grant        none
 // ==/UserScript==
 
