@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         cPanel Email Filters Helper
 // @namespace    https://example.com/cpanel-email-filters
-// @version      0.2.3
+// @version      0.2.4
 // @description  Adds helper actions on cPanel's email filters page: extract rules to a text file and add multiple rules from a list.
 // @author       Your Name
 // @match        *://*/frontend/*/mail/filters/*
@@ -307,8 +307,9 @@
       <div style="font-size: 11px; margin-top: 6px; color: #555;">
         Multiple values will be added as a single OR rule group.
       </div>
+      <div id="tm-rule-status" style="font-size: 12px; margin-top: 8px; color: #1a7f37; min-height: 16px;" role="status" aria-live="polite"></div>
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
-        <button id="tm-rule-cancel" style="padding: 6px 10px;">Cancel</button>
+        <button id="tm-rule-cancel" style="padding: 6px 10px;">Close</button>
         <button id="tm-rule-submit" style="padding: 6px 10px; background: #2d6cdf; color: #fff; border: none; border-radius: 4px;">Add Rules</button>
       </div>
     `;
@@ -409,8 +410,12 @@
         selectByText(activeActionSelect, actionValue);
       }
 
-      cleanup();
-      alert("Rules added. Review them and click Save in cPanel to apply changes.");
+      const valuesInput = overlay.querySelector("#tm-rule-values");
+      const status = overlay.querySelector("#tm-rule-status");
+      valuesInput.value = "";
+      valuesInput.placeholder = "Add another value or list, then click Add Rules again";
+      status.textContent = "Rules added. Add another set, close this dialog, or click Save in cPanel.";
+      valuesInput.focus();
     });
 
     document.body.appendChild(overlay);
@@ -455,6 +460,13 @@
 
     bar.appendChild(makeBtn("Extract All Rules", extractRules));
     bar.appendChild(makeBtn("Add New Rule", addNewRule));
+    bar.appendChild(makeBtn("Scroll to Save", () => {
+      const bottom = Math.max(
+        document.documentElement.scrollHeight,
+        document.body?.scrollHeight || 0
+      );
+      window.scrollTo({ top: bottom, behavior: "smooth" });
+    }));
 
     const note = document.createElement("span");
     note.textContent = "(Remember to click Save in cPanel)";
