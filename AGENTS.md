@@ -17,6 +17,6 @@ This repository contains a small set of personal Tampermonkey userscripts. Each 
 - Every time you run, review and update `README.md` to keep it current with the repository contents.
 
 ## Current script context
-- `cPanel Email Filters Helper.user.js` includes a form-driven rule builder (header/operator/interaction/action), defaults new rules to `From` when available, normalizes bracketed email addresses for sender/recipient headers (`From`, `To`, `Any Recipient`), and always inserts fresh rule rows before filling multi-value entries.
+- `cPanel Email Filters Helper.user.js` includes a top fixed helper bar with extraction, add-rule, and scroll-to-save actions; its form-driven rule builder (header/operator/interaction/action) stays open after adding a set, defaults new rules to `From` when available, normalizes bracketed email addresses for sender/recipient headers (`From`, `To`, `Any Recipient`), and always inserts fresh rule rows before filling multi-value entries.
 - Reddit scripts include: visited-link highlighting (`Reddit – highlight visited links`) and gallery image downloading via a fixed top bar (`Reddit Gallery Downloader Bar`).
 - `Speedy Sites (YouTube only)` auto-applies playback speed (with live-video handling), shows a floating speed bar, and rehooks on dynamic page changes.
